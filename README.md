@@ -1,0 +1,2 @@
+# german-bot
+ArtikelBot
