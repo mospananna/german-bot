@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class Exercise:
-    template: str  # "Ich sehe ▢ Hund."
+    template: str  # "Ich sehe ___ Hund."
     answer: str    # correct form, e.g. "den"
     case: str      # "Nominativ" / "Akkusativ" / "Dativ"
 
@@ -67,9 +67,9 @@ CARDS: List[Card] = [
         morpho="📐 *Морфология:* Односложное слово на согласную без суффиксов → чаще мужской. Мн.ч.: *Tische* (+e).",
         historic="📜 *История:* От лат. *discus* (диск, блюдо) → *tisk → Tisch*. Изначально «доска для еды». Родственно англ. *dish*.",
         exercises=[
-            Exercise("▢ Tisch ist groß.", "Der", "Nominativ"),
-            Exercise("Ich kaufe ▢ Tisch.", "einen", "Akkusativ"),
-            Exercise("Das Buch liegt auf ▢ Tisch.", "dem", "Dativ"),
+            Exercise("___ Tisch ist groß.", "Der", "Nominativ"),
+            Exercise("Ich kaufe ___ Tisch.", "einen", "Akkusativ"),
+            Exercise("Das Buch liegt auf ___ Tisch.", "dem", "Dativ"),
         ],
     ),
 
@@ -80,9 +80,9 @@ CARDS: List[Card] = [
         morpho="📐 *Морфология:* Окончание *-e* → женский род в ~90% случаев. Одно из самых надёжных правил! Мн.ч.: *Lampen* (+n).",
         historic="📜 *История:* Из греч. *lampas* (факел, светильник) через лат. *lampada*. Пришло во все европейские языки.",
         exercises=[
-            Exercise("▢ Lampe ist kaputt.", "Die", "Nominativ"),
-            Exercise("Ich kaufe ▢ Lampe.", "eine", "Akkusativ"),
-            Exercise("Das Zimmer ist dank ▢ Lampe hell.", "der", "Dativ"),
+            Exercise("___ Lampe ist kaputt.", "Die", "Nominativ"),
+            Exercise("Ich kaufe ___ Lampe.", "eine", "Akkusativ"),
+            Exercise("Das Zimmer ist dank ___ Lampe hell.", "der", "Dativ"),
         ],
     ),
 
@@ -93,9 +93,9 @@ CARDS: List[Card] = [
         morpho="📐 *Морфология:* Слова на *-er* среднего рода часто имеют нулевое множественное число. Мн.ч.: *Fenster* (без изменений).",
         historic="📜 *История:* От лат. *fenestra* (окно, отверстие). В рус. «окно» от «ока» (глаз) — интересный параллелизм: окно = «глаз дома».",
         exercises=[
-            Exercise("▢ Fenster ist offen.", "Das", "Nominativ"),
-            Exercise("Ich öffne ▢ Fenster.", "das", "Akkusativ"),
-            Exercise("Die Luft kommt durch ▢ Fenster.", "das", "Akkusativ"),
+            Exercise("___ Fenster ist offen.", "Das", "Nominativ"),
+            Exercise("Ich öffne ___ Fenster.", "das", "Akkusativ"),
+            Exercise("Die Luft kommt durch ___ Fenster.", "das", "Akkusativ"),
         ],
     ),
 
@@ -106,9 +106,9 @@ CARDS: List[Card] = [
         morpho="📐 *Морфология:* Односложное слово на согласную → часто мужской. Мн.ч. с умлаутом: *Stühle*.",
         historic="📜 *История:* От германского *stōla* — «место для сидения». Родственно рус. *стол* и англ. *stool*. Изначально означало трон.",
         exercises=[
-            Exercise("▢ Stuhl ist bequem.", "Der", "Nominativ"),
-            Exercise("Ich nehme ▢ Stuhl.", "den", "Akkusativ"),
-            Exercise("Ich sitze auf ▢ Stuhl.", "dem", "Dativ"),
+            Exercise("___ Stuhl ist bequem.", "Der", "Nominativ"),
+            Exercise("Ich nehme ___ Stuhl.", "den", "Akkusativ"),
+            Exercise("Ich sitze auf ___ Stuhl.", "dem", "Dativ"),
         ],
     ),
 
@@ -119,9 +119,9 @@ CARDS: List[Card] = [
         morpho="📐 *Морфология:* Окончание *-e* → женский. Мн.ч.: *Taschen* (+n).",
         historic="📜 *История:* От средневерхненем. *tasche* — «карман». Родственно итал. *tasca*. Вероятно из арабского через торговые пути.",
         exercises=[
-            Exercise("▢ Tasche ist schwer.", "Die", "Nominativ"),
-            Exercise("Ich trage ▢ Tasche.", "die", "Akkusativ"),
-            Exercise("Der Schlüssel ist in ▢ Tasche.", "der", "Dativ"),
+            Exercise("___ Tasche ist schwer.", "Die", "Nominativ"),
+            Exercise("Ich trage ___ Tasche.", "die", "Akkusativ"),
+            Exercise("Der Schlüssel ist in ___ Tasche.", "der", "Dativ"),
         ],
     ),
 
@@ -132,9 +132,9 @@ CARDS: List[Card] = [
         morpho="📐 *Морфология:* Слова на *-uch* → почти всегда средний: *das Buch, das Tuch, das Fach*. Мн.ч.: *Bücher* (умлаут + -er).",
         historic="📜 *История:* От германского *bōk-* — «буковое дерево». Германцы вырезали руны на буковых дощечках. Родственно англ. *book*.",
         exercises=[
-            Exercise("▢ Buch ist interessant.", "Das", "Nominativ"),
-            Exercise("Ich lese ▢ Buch.", "das", "Akkusativ"),
-            Exercise("Ich lerne aus ▢ Buch.", "dem", "Dativ"),
+            Exercise("___ Buch ist interessant.", "Das", "Nominativ"),
+            Exercise("Ich lese ___ Buch.", "das", "Akkusativ"),
+            Exercise("Ich lerne aus ___ Buch.", "dem", "Dativ"),
         ],
     ),
 
@@ -145,9 +145,9 @@ CARDS: List[Card] = [
         morpho="📐 *Морфология:* Слова на *-el* → чаще мужской: *der Schlüssel, der Mantel, der Spiegel*. Мн.ч. без изменений.",
         historic="📜 *История:* От *schließen* (закрывать) + *-el*. Буквально — «то, чем закрывают». Тот же корень в *Schloss* (замок/дворец).",
         exercises=[
-            Exercise("▢ Schlüssel liegt auf dem Tisch.", "Der", "Nominativ"),
-            Exercise("Ich suche ▢ Schlüssel.", "den", "Akkusativ"),
-            Exercise("Mit ▢ Schlüssel öffne ich die Tür.", "dem", "Dativ"),
+            Exercise("___ Schlüssel liegt auf dem Tisch.", "Der", "Nominativ"),
+            Exercise("Ich suche ___ Schlüssel.", "den", "Akkusativ"),
+            Exercise("Mit ___ Schlüssel öffne ich die Tür.", "dem", "Dativ"),
         ],
     ),
 
@@ -158,9 +158,9 @@ CARDS: List[Card] = [
         morpho="📐 *Морфология:* Исторически женский род, нужно запомнить. Мн.ч.: *Uhren* (+en).",
         historic="📜 *История:* От лат. *hora* (час) через *ore → Uhr*. Родственно рус. «урок» и «час» (через другой путь).",
         exercises=[
-            Exercise("▢ Uhr ist kaputt.", "Die", "Nominativ"),
-            Exercise("Ich kaufe ▢ Uhr.", "eine", "Akkusativ"),
-            Exercise("Ich schaue auf ▢ Uhr.", "die", "Akkusativ"),
+            Exercise("___ Uhr ist kaputt.", "Die", "Nominativ"),
+            Exercise("Ich kaufe ___ Uhr.", "eine", "Akkusativ"),
+            Exercise("Ich schaue auf ___ Uhr.", "die", "Akkusativ"),
         ],
     ),
 
@@ -173,9 +173,9 @@ CARDS: List[Card] = [
         morpho="📐 *Морфология:* Двойное *-ee* — сигнал заимствования. Напитки-заимствования почти всегда мужского рода.",
         historic="📜 *История:* Из тур. *kahve* → арабск. *qahwa*. В Европу попал через Османскую империю в XVI–XVII вв. Первые кофейни — в Вене и Гамбурге.",
         exercises=[
-            Exercise("▢ Kaffee ist heiß.", "Der", "Nominativ"),
-            Exercise("Ich trinke ▢ Kaffee.", "den", "Akkusativ"),
-            Exercise("Mit ▢ Kaffee fange ich den Tag an.", "dem", "Dativ"),
+            Exercise("___ Kaffee ist heiß.", "Der", "Nominativ"),
+            Exercise("Ich trinke ___ Kaffee.", "den", "Akkusativ"),
+            Exercise("Mit ___ Kaffee fange ich den Tag an.", "dem", "Dativ"),
         ],
     ),
 
@@ -186,9 +186,9 @@ CARDS: List[Card] = [
         morpho="📐 *Морфология:* Окончание *-e* → женский. Мн.ч.: *Suppen* (+n).",
         historic="📜 *История:* От старофранц. *soupe* — «хлеб, намоченный в бульоне». Родственно англ. *soup*. В средние века суп ели, обмакивая хлеб.",
         exercises=[
-            Exercise("▢ Suppe ist lecker.", "Die", "Nominativ"),
-            Exercise("Ich koche ▢ Suppe.", "eine", "Akkusativ"),
-            Exercise("Das Brot passt gut zu ▢ Suppe.", "der", "Dativ"),
+            Exercise("___ Suppe ist lecker.", "Die", "Nominativ"),
+            Exercise("Ich koche ___ Suppe.", "eine", "Akkusativ"),
+            Exercise("Das Brot passt gut zu ___ Suppe.", "der", "Dativ"),
         ],
     ),
 
@@ -199,9 +199,9 @@ CARDS: List[Card] = [
         morpho="📐 *Морфология:* Слово на *-t*, без «женских» или специальных суффиксов — исторически средний. Мн.ч.: *Brote* (+e).",
         historic="📜 *История:* Германский корень *braudą* — «заквашенный хлеб». Родственно англ. *bread*. Рус. «хлеб» — из готск. *hlaifs* (другой путь).",
         exercises=[
-            Exercise("▢ Brot ist frisch.", "Das", "Nominativ"),
-            Exercise("Ich esse ▢ Brot.", "das", "Akkusativ"),
-            Exercise("Zum Frühstück greife ich nach ▢ Brot.", "dem", "Dativ"),
+            Exercise("___ Brot ist frisch.", "Das", "Nominativ"),
+            Exercise("Ich esse ___ Brot.", "das", "Akkusativ"),
+            Exercise("Zum Frühstück greife ich nach ___ Brot.", "dem", "Dativ"),
         ],
     ),
 
@@ -212,9 +212,9 @@ CARDS: List[Card] = [
         morpho="📐 *Морфология:* Слова на *-el* → чаще мужской: *der Apfel, der Mantel, der Gürtel*. Мн.ч.: *Äpfel* (умлаут).",
         historic="📜 *История:* Германский корень *aplaz* — одно из древнейших слов. Родственно рус. «яблоко» и лат. *Abella* (итальянский город яблок).",
         exercises=[
-            Exercise("▢ Apfel ist rot.", "Der", "Nominativ"),
-            Exercise("Ich esse ▢ Apfel.", "einen", "Akkusativ"),
-            Exercise("Der Saft kommt aus ▢ Apfel.", "dem", "Dativ"),
+            Exercise("___ Apfel ist rot.", "Der", "Nominativ"),
+            Exercise("Ich esse ___ Apfel.", "einen", "Akkusativ"),
+            Exercise("Der Saft kommt aus ___ Apfel.", "dem", "Dativ"),
         ],
     ),
 
@@ -225,9 +225,9 @@ CARDS: List[Card] = [
         morpho="📐 *Морфология:* Окончание *-e* → женский. Почти без исключений. Мн.ч.: *Tomaten* (+n).",
         historic="📜 *История:* Из нахуатльского *tomatl* через испанский. В Европу привезли из Америки в XVI в. Долго считали ядовитыми.",
         exercises=[
-            Exercise("▢ Tomate ist reif.", "Die", "Nominativ"),
-            Exercise("Ich kaufe ▢ Tomate.", "eine", "Akkusativ"),
-            Exercise("Der Salat wird mit ▢ Tomate gemacht.", "der", "Dativ"),
+            Exercise("___ Tomate ist reif.", "Die", "Nominativ"),
+            Exercise("Ich kaufe ___ Tomate.", "eine", "Akkusativ"),
+            Exercise("Der Salat wird mit ___ Tomate gemacht.", "der", "Dativ"),
         ],
     ),
 
@@ -238,9 +238,9 @@ CARDS: List[Card] = [
         morpho="📐 *Морфология:* Очень короткое слово — нужно запомнить. Мн.ч.: *Eier* (+er, без умлаута).",
         historic="📜 *История:* Германский корень *ajją*. Родственно рус. «яйцо», лат. *ovum*, греч. *ōón*. Один из древнейших праиндоевропейских корней.",
         exercises=[
-            Exercise("▢ Ei ist frisch.", "Das", "Nominativ"),
-            Exercise("Ich koche ▢ Ei.", "ein", "Akkusativ"),
-            Exercise("Mit ▢ Ei macht man Kuchen.", "einem", "Dativ"),
+            Exercise("___ Ei ist frisch.", "Das", "Nominativ"),
+            Exercise("Ich koche ___ Ei.", "ein", "Akkusativ"),
+            Exercise("Mit ___ Ei macht man Kuchen.", "einem", "Dativ"),
         ],
     ),
 
@@ -251,9 +251,9 @@ CARDS: List[Card] = [
         morpho="📐 *Морфология:* Слово на *-ch* — нет чёткого правила, нужно запомнить. Только ед.ч.",
         historic="📜 *История:* Германский корень *meluks*. Родственно рус. «молоко», лат. *mulgere* (доить), греч. *amelgō*.",
         exercises=[
-            Exercise("▢ Milch ist kalt.", "Die", "Nominativ"),
-            Exercise("Ich trinke ▢ Milch.", "die", "Akkusativ"),
-            Exercise("Der Kaffee wird mit ▢ Milch getrunken.", "der", "Dativ"),
+            Exercise("___ Milch ist kalt.", "Die", "Nominativ"),
+            Exercise("Ich trinke ___ Milch.", "die", "Akkusativ"),
+            Exercise("Der Kaffee wird mit ___ Milch getrunken.", "der", "Dativ"),
         ],
     ),
 
@@ -266,9 +266,9 @@ CARDS: List[Card] = [
         morpho="📐 *Морфология:* Суффикс *-er* (агенс) → мужской: *der Lehrer, der Fahrer, der Bäcker*. Мн.ч. без изменений.",
         historic="📜 *История:* От *lehren* (учить) + *-er*. *Lehren* из германского *laizjan* — «следовать по следу, указывать путь». Знание как «след».",
         exercises=[
-            Exercise("▢ Lehrer erklärt das gut.", "Der", "Nominativ"),
-            Exercise("Ich frage ▢ Lehrer.", "den", "Akkusativ"),
-            Exercise("Ich danke ▢ Lehrer.", "dem", "Dativ"),
+            Exercise("___ Lehrer erklärt das gut.", "Der", "Nominativ"),
+            Exercise("Ich frage ___ Lehrer.", "den", "Akkusativ"),
+            Exercise("Ich danke ___ Lehrer.", "dem", "Dativ"),
         ],
     ),
 
@@ -279,9 +279,9 @@ CARDS: List[Card] = [
         morpho="📐 *Морфология:* Суффикс *-in* → 100% женский. Мн.ч.: *-innen*. Примеры: *die Ärztin, die Lehrerin, die Freundin*.",
         historic="📜 *История:* *Student* из лат. *studere* (стараться, учиться). Суффикс *-in* — исконно германский способ образования женского рода.",
         exercises=[
-            Exercise("▢ Studentin lernt viel.", "Die", "Nominativ"),
-            Exercise("Ich kenne ▢ Studentin.", "die", "Akkusativ"),
-            Exercise("Ich helfe ▢ Studentin.", "der", "Dativ"),
+            Exercise("___ Studentin lernt viel.", "Die", "Nominativ"),
+            Exercise("Ich kenne ___ Studentin.", "die", "Akkusativ"),
+            Exercise("Ich helfe ___ Studentin.", "der", "Dativ"),
         ],
     ),
 
@@ -292,9 +292,9 @@ CARDS: List[Card] = [
         morpho="📐 *Морфология:* Мн.ч. с *-er*: *Kinder*. Типичный паттерн для односложных слов среднего рода.",
         historic="📜 *История:* Германский корень *kinda-* — «потомство». Родственно англ. *kin* (родственники). Отсюда *Kindergarten* (сад детей).",
         exercises=[
-            Exercise("▢ Kind spielt draußen.", "Das", "Nominativ"),
-            Exercise("Ich sehe ▢ Kind.", "das", "Akkusativ"),
-            Exercise("Ich lese ▢ Kind eine Geschichte vor.", "dem", "Dativ"),
+            Exercise("___ Kind spielt draußen.", "Das", "Nominativ"),
+            Exercise("Ich sehe ___ Kind.", "das", "Akkusativ"),
+            Exercise("Ich lese ___ Kind eine Geschichte vor.", "dem", "Dativ"),
         ],
     ),
 
@@ -305,9 +305,9 @@ CARDS: List[Card] = [
         morpho="📐 *Морфология:* Слово на согласную, без суффиксов → мужской. Мн.ч. с умлаутом: *Ärzte*.",
         historic="📜 *История:* Из греч. *arkhiatros* (главный врач) через лат. *archiater*. В средние века сократилось до *arzāt → Arzt*.",
         exercises=[
-            Exercise("▢ Arzt ist freundlich.", "Der", "Nominativ"),
-            Exercise("Ich besuche ▢ Arzt.", "den", "Akkusativ"),
-            Exercise("Ich vertraue ▢ Arzt.", "dem", "Dativ"),
+            Exercise("___ Arzt ist freundlich.", "Der", "Nominativ"),
+            Exercise("Ich besuche ___ Arzt.", "den", "Akkusativ"),
+            Exercise("Ich vertraue ___ Arzt.", "dem", "Dativ"),
         ],
     ),
 
@@ -318,9 +318,9 @@ CARDS: List[Card] = [
         morpho="📐 *Морфология:* *Freund* (мужской) + *-in* = *Freundin* (женский). Мн.ч.: *Freundinnen*.",
         historic="📜 *История:* От германского *frijōnd* — «любящий, дорогой». Родственно праиндоевроп. корню *preyH-* (любить), откуда рус. «свободный».",
         exercises=[
-            Exercise("▢ Freundin ruft mich an.", "Die", "Nominativ"),
-            Exercise("Ich besuche ▢ Freundin.", "die", "Akkusativ"),
-            Exercise("Ich schreibe ▢ Freundin eine Nachricht.", "der", "Dativ"),
+            Exercise("___ Freundin ruft mich an.", "Die", "Nominativ"),
+            Exercise("Ich besuche ___ Freundin.", "die", "Akkusativ"),
+            Exercise("Ich schreibe ___ Freundin eine Nachricht.", "der", "Dativ"),
         ],
     ),
 
@@ -331,9 +331,9 @@ CARDS: List[Card] = [
         morpho="📐 *Морфология:* Слова на *-y* (заимствования) → средний: *das Baby, das Hobby, das Handy*. Мн.ч.: *Babys* (+s).",
         historic="📜 *История:* Английское *baby* — звукоподражательное слово из детской речи. Вошло в немецкий через американскую культуру XX в.",
         exercises=[
-            Exercise("▢ Baby schläft.", "Das", "Nominativ"),
-            Exercise("Ich halte ▢ Baby.", "das", "Akkusativ"),
-            Exercise("Ich singe ▢ Baby ein Lied.", "dem", "Dativ"),
+            Exercise("___ Baby schläft.", "Das", "Nominativ"),
+            Exercise("Ich halte ___ Baby.", "das", "Akkusativ"),
+            Exercise("Ich singe ___ Baby ein Lied.", "dem", "Dativ"),
         ],
     ),
 
@@ -346,9 +346,9 @@ CARDS: List[Card] = [
         morpho="📐 *Морфология:* Слово на согласную, односложное → мужской. Мн.ч. с умлаутом: *Züge*.",
         historic="📜 *История:* От *ziehen* (тянуть). Поезд — то, что тянет или тянется. Родственно рус. «тяга» и англ. *tug*.",
         exercises=[
-            Exercise("▢ Zug kommt pünktlich.", "Der", "Nominativ"),
-            Exercise("Ich nehme ▢ Zug.", "den", "Akkusativ"),
-            Exercise("Ich fahre mit ▢ Zug.", "dem", "Dativ"),
+            Exercise("___ Zug kommt pünktlich.", "Der", "Nominativ"),
+            Exercise("Ich nehme ___ Zug.", "den", "Akkusativ"),
+            Exercise("Ich fahre mit ___ Zug.", "dem", "Dativ"),
         ],
     ),
 
@@ -359,9 +359,9 @@ CARDS: List[Card] = [
         morpho="📐 *Морфология:* Окончание *-e* → женский. Мн.ч.: *Straßen*.",
         historic="📜 *История:* Из лат. *via strata* — «вымощенная дорога». *Strata* от *sternere* (мостить). Отсюда же англ. *street*.",
         exercises=[
-            Exercise("▢ Straße ist lang.", "Die", "Nominativ"),
-            Exercise("Ich überquere ▢ Straße.", "die", "Akkusativ"),
-            Exercise("Am Ende ▢ Straße ist die Post.", "der", "Genitiv"),
+            Exercise("___ Straße ist lang.", "Die", "Nominativ"),
+            Exercise("Ich überquere ___ Straße.", "die", "Akkusativ"),
+            Exercise("Am Ende ___ Straße ist die Post.", "der", "Genitiv"),
         ],
     ),
 
@@ -372,9 +372,9 @@ CARDS: List[Card] = [
         morpho="📐 *Морфология:* Окончание *-o* у заимствований → средний. Мн.ч.: *Autos* (+s).",
         historic="📜 *История:* Сокращение от *Automobil* = греч. *autos* (сам) + лат. *mobilis* (подвижный). «Самодвижущийся» — первое название машин.",
         exercises=[
-            Exercise("▢ Auto ist neu.", "Das", "Nominativ"),
-            Exercise("Ich kaufe ▢ Auto.", "ein", "Akkusativ"),
-            Exercise("Ich fahre mit ▢ Auto.", "dem", "Dativ"),
+            Exercise("___ Auto ist neu.", "Das", "Nominativ"),
+            Exercise("Ich kaufe ___ Auto.", "ein", "Akkusativ"),
+            Exercise("Ich fahre mit ___ Auto.", "dem", "Dativ"),
         ],
     ),
 
@@ -385,9 +385,9 @@ CARDS: List[Card] = [
         morpho="📐 *Морфология:* *Bahn + Hof → der Bahnhof*. Это правило работает всегда: *der Handschuh, das Schlafzimmer, die Bahnfahrt*.",
         historic="📜 *История:* *Bahn* (дорога) + *Hof* (двор). Первые вокзалы строились как большие дворы. Рус. «вокзал» — из лондонского Vauxhall.",
         exercises=[
-            Exercise("▢ Bahnhof ist groß.", "Der", "Nominativ"),
-            Exercise("Ich suche ▢ Bahnhof.", "den", "Akkusativ"),
-            Exercise("Ich warte am ▢ Bahnhof.", "Bahnhof (am = an dem)", "Dativ"),
+            Exercise("___ Bahnhof ist groß.", "Der", "Nominativ"),
+            Exercise("Ich suche ___ Bahnhof.", "den", "Akkusativ"),
+            Exercise("Ich warte am ___ Bahnhof.", "Bahnhof (am = an dem)", "Dativ"),
         ],
     ),
 
@@ -398,9 +398,9 @@ CARDS: List[Card] = [
         morpho="📐 *Морфология:* Окончание *-e* → женский. Мн.ч.: *Brücken* (+n).",
         historic="📜 *История:* От германского *brugjō* — «бревно через ручей». Родственно англ. *bridge*. Изначально — просто бревно над водой.",
         exercises=[
-            Exercise("▢ Brücke ist alt.", "Die", "Nominativ"),
-            Exercise("Wir überqueren ▢ Brücke.", "die", "Akkusativ"),
-            Exercise("Auf ▢ Brücke ist viel Verkehr.", "der", "Dativ"),
+            Exercise("___ Brücke ist alt.", "Die", "Nominativ"),
+            Exercise("Wir überqueren ___ Brücke.", "die", "Akkusativ"),
+            Exercise("Auf ___ Brücke ist viel Verkehr.", "der", "Dativ"),
         ],
     ),
 
@@ -411,8 +411,8 @@ CARDS: List[Card] = [
         morpho="📐 *Морфология:* Суффикс *-um* → средний. Мн.ч. *-um → -en*: *Museen*.",
         historic="📜 *История:* Из греч. *mouseion* — храм муз. Александрийский мусейон был местом учёных собраний, а не выставок.",
         exercises=[
-            Exercise("▢ Museum ist interessant.", "Das", "Nominativ"),
-            Exercise("Ich besuche ▢ Museum.", "das", "Akkusativ"),
+            Exercise("___ Museum ist interessant.", "Das", "Nominativ"),
+            Exercise("Ich besuche ___ Museum.", "das", "Akkusativ"),
             Exercise("Im Museum gibt es viele Kunstwerke.", "dem (im = in dem)", "Dativ"),
         ],
     ),
@@ -424,9 +424,9 @@ CARDS: List[Card] = [
         morpho="📐 *Морфология:* Окончание *-e* → женский. Мн.ч.: *Schulen* (+n).",
         historic="📜 *История:* Из греч. *skholē* — «досуг, свободное время». Для греков учёба была благородным использованием свободного времени.",
         exercises=[
-            Exercise("▢ Schule beginnt um 8 Uhr.", "Die", "Nominativ"),
-            Exercise("Ich gehe in ▢ Schule.", "die", "Akkusativ"),
-            Exercise("Vor ▢ Schule warten viele Kinder.", "der", "Dativ"),
+            Exercise("___ Schule beginnt um 8 Uhr.", "Die", "Nominativ"),
+            Exercise("Ich gehe in ___ Schule.", "die", "Akkusativ"),
+            Exercise("Vor ___ Schule warten viele Kinder.", "der", "Dativ"),
         ],
     ),
 ]
