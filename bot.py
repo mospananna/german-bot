@@ -582,15 +582,6 @@ def kb_continue() -> InlineKeyboardMarkup:
     ])
 
 
-def kb_after_topic(finished_all: bool) -> InlineKeyboardMarkup:
-    if finished_all:
-        return InlineKeyboardMarkup([[InlineKeyboardButton("🏁 Итог", callback_data="action:final")]])
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton("Следующая тема", callback_data="action:next_topic")],
-        [InlineKeyboardButton("К списку тем", callback_data="go:menu")],
-    ])
-
-
 # ─────────────────────────────────────────────────────────
 # ITEM BUILDERS (per phase)
 # ─────────────────────────────────────────────────────────
@@ -602,6 +593,7 @@ def build_p1_items(topic_id: str) -> List[dict]:
         random.shuffle(options)
         items.append({
             "prompt": f"▢▢▢ {w.word}",
+            "full": f"{w.artikel} {w.word}",
             "options": options,
             "answer": w.artikel,
             "word": w.word,
@@ -625,7 +617,7 @@ def build_p2_items(topic_id: str) -> List[dict]:
             f"С определённым артиклем:\n\n*{def_form} {w.word}*\n\n"
             f"А с неопределённым?"
         )
-        items.append({"prompt": prompt, "options": options, "answer": answer})
+        items.append({"prompt": prompt, "full": f"{answer} {w.word}", "options": options, "answer": answer})
     return items
 
 
@@ -636,7 +628,8 @@ def build_p3_items(topic_id: str) -> List[dict]:
         options = build_options(answer, kind)
         art_label = "bestimmter" if atype == "bestimmt" else "unbestimmter"
         prompt = f"*{case} · {art_label} Artikel*\n\n{template}"
-        items.append({"prompt": prompt, "options": options, "answer": answer})
+        full = template.replace("▢▢▢", answer)
+        items.append({"prompt": prompt, "full": full, "options": options, "answer": answer})
     return items
 
 
@@ -647,7 +640,8 @@ def build_p4_items(topic_id: str) -> List[dict]:
         for case_name, (template, answer) in (("Akkusativ", pair["akk"]), ("Dativ", pair["dat"])):
             options = build_options(answer, kind)
             prompt = f"*{pair['word']}*\n\n*{case_name}*\n\n{template}"
-            items.append({"prompt": prompt, "options": options, "answer": answer})
+            full = template.replace("▢▢▢", answer)
+            items.append({"prompt": prompt, "full": full, "options": options, "answer": answer})
     return items
 
 
@@ -748,10 +742,10 @@ async def handle_answer(query, context: ContextTypes.DEFAULT_TYPE, chosen: str) 
     item = ud["items"][ud["idx"]]
     correct = chosen == item["answer"]
     icon = "✅" if correct else f"❌  (правильно: *{item['answer']}*)"
-    extra = ""
     if ud["phase"] == "p1" and "translation" in item:
-        extra = f"\n\n_{item['word']} — {item['translation']}_"
-    text = f"{item['prompt']}\n\nТвой ответ: *{chosen}* {icon}{extra}"
+        text = f"Твой ответ: *{chosen}* {icon}\n\n_{item['full']} — {item['translation']}_"
+    else:
+        text = f"Твой ответ: *{chosen}* {icon}\n\n{item['full']}"
     await query.edit_message_text(text, reply_markup=kb_continue(), parse_mode="Markdown")
 
 
@@ -789,15 +783,8 @@ async def finish_topic(query, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     praise = random.choice(PRAISE_VARIANTS)
     await query.edit_message_text(
-        praise, reply_markup=kb_after_topic(False), parse_mode="Markdown"
+        f"{praise}\n\nВыбери следующую тему:", reply_markup=kb_main_menu(completed), parse_mode="Markdown"
     )
-
-
-def next_uncompleted_topic(completed: set) -> Optional[str]:
-    for tid in TOPIC_ORDER:
-        if tid not in completed:
-            return tid
-    return None
 
 
 async def enter_topic(query, context: ContextTypes.DEFAULT_TYPE, topic_id: str) -> None:
@@ -914,25 +901,9 @@ async def continue_router(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
 
 async def action_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    # Kept for forward-compatibility with any future action:* buttons; no branches active currently.
     query = update.callback_query
     await query.answer()
-    action = query.data.split(":", 1)[1]
-    ud = context.user_data
-    completed = get_completed(ud)
-
-    if action == "next_topic":
-        nxt = next_uncompleted_topic(completed)
-        if nxt is None:
-            await query.edit_message_text(
-                "*Все 150 слов пройдены!*\n\n"
-                f"{random.choice(FINAL_VARIANTS)}",
-                reply_markup=kb_main_menu(completed),
-                parse_mode="Markdown",
-            )
-        else:
-            await enter_topic(query, context, nxt)
-    elif action == "final":
-        await query.edit_message_text("Главное меню:", reply_markup=kb_main_menu(completed))
 
 
 # ─────────────────────────────────────────────────────────
