@@ -12,13 +12,19 @@ from telegram.ext import (
     ContextTypes,
 )
 
+try:
+    import asyncpg
+except ImportError:
+    asyncpg = None  # bot still runs without a DB — falls back to in-memory progress
+
 # =========================================================
 # "Артикли на автомате" — Telegram bot for practicing German articles
 # Stack: python-telegram-bot v22+
 # Run:
 #   1) pip3 install -r requirements.txt
 #   2) export TELEGRAM_BOT_TOKEN="YOUR_TOKEN"
-#   3) python3 bot.py
+#   3) (optional) export DATABASE_URL="postgresql://..." — enables persistent progress
+#   4) python3 bot.py
 # =========================================================
 
 logging.basicConfig(
@@ -697,13 +703,121 @@ CHEAT_SHEET_TEXT = (
 
 
 # ─────────────────────────────────────────────────────────
+# DATABASE (persistent progress — Postgres via DATABASE_URL)
+#
+# Optional by design: if DATABASE_URL isn't set or the connection fails,
+# DB_POOL stays None and every function below transparently falls back
+# to the old in-memory context.user_data behaviour. The bot never crashes
+# because of the DB — worst case, progress just doesn't survive a restart,
+# same as before this was added.
+# ─────────────────────────────────────────────────────────
+
+DB_POOL = None  # type: Optional["asyncpg.Pool"]
+
+USERS_TABLE_SQL = """
+CREATE TABLE IF NOT EXISTS users (
+    telegram_user_id BIGINT PRIMARY KEY,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    last_seen_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+"""
+
+PROGRESS_TABLE_SQL = """
+CREATE TABLE IF NOT EXISTS progress (
+    telegram_user_id BIGINT NOT NULL REFERENCES users(telegram_user_id),
+    topic_id TEXT NOT NULL,
+    completed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (telegram_user_id, topic_id)
+);
+"""
+
+
+async def init_db(app: Application) -> None:
+    global DB_POOL
+    if asyncpg is None:
+        logger.warning("asyncpg not installed — progress will not be saved across restarts.")
+        return
+    database_url = os.getenv("DATABASE_URL")
+    if not database_url:
+        logger.warning("DATABASE_URL not set — progress will not be saved across restarts.")
+        return
+    try:
+        DB_POOL = await asyncpg.create_pool(database_url, min_size=1, max_size=5)
+        async with DB_POOL.acquire() as conn:
+            await conn.execute(USERS_TABLE_SQL)
+            await conn.execute(PROGRESS_TABLE_SQL)
+        logger.info("Database connected, schema ensured — progress is now persistent.")
+    except Exception as e:
+        logger.error(f"Database connection failed, falling back to in-memory progress: {e}")
+        DB_POOL = None
+
+
+async def close_db(app: Application) -> None:
+    if DB_POOL is not None:
+        await DB_POOL.close()
+
+
+async def touch_user(user_id: int) -> None:
+    if DB_POOL is None:
+        return
+    await DB_POOL.execute(
+        "INSERT INTO users (telegram_user_id) VALUES ($1) "
+        "ON CONFLICT (telegram_user_id) DO UPDATE SET last_seen_at = now()",
+        user_id,
+    )
+
+
+async def db_get_completed(user_id: int) -> Optional[set]:
+    """Returns None if the DB isn't available, so callers know to fall back."""
+    if DB_POOL is None:
+        return None
+    rows = await DB_POOL.fetch(
+        "SELECT topic_id FROM progress WHERE telegram_user_id = $1", user_id
+    )
+    return {r["topic_id"] for r in rows}
+
+
+async def db_mark_completed(user_id: int, topic_id: str) -> None:
+    if DB_POOL is None:
+        return
+    await touch_user(user_id)
+    await DB_POOL.execute(
+        "INSERT INTO progress (telegram_user_id, topic_id) VALUES ($1, $2) "
+        "ON CONFLICT (telegram_user_id, topic_id) DO NOTHING",
+        user_id, topic_id,
+    )
+
+
+async def db_reset_progress(user_id: int) -> None:
+    if DB_POOL is None:
+        return
+    await DB_POOL.execute("DELETE FROM progress WHERE telegram_user_id = $1", user_id)
+
+
+# ─────────────────────────────────────────────────────────
 # CORE FLOW HELPERS
 # ─────────────────────────────────────────────────────────
 
-def get_completed(ud: dict) -> set:
+async def get_completed(context: ContextTypes.DEFAULT_TYPE, user_id: int) -> set:
+    """Source of truth for 'which topics has this user finished'.
+    Tries the DB first; falls back to context.user_data if the DB is unavailable."""
+    from_db = await db_get_completed(user_id)
+    if from_db is not None:
+        return from_db
+    ud = context.user_data
     if "completed" not in ud:
         ud["completed"] = set()
     return ud["completed"]
+
+
+async def mark_completed(context: ContextTypes.DEFAULT_TYPE, user_id: int, topic_id: str) -> None:
+    if DB_POOL is not None:
+        await db_mark_completed(user_id, topic_id)
+    else:
+        ud = context.user_data
+        if "completed" not in ud:
+            ud["completed"] = set()
+        ud["completed"].add(topic_id)
 
 
 async def show_phase_intro(query, context: ContextTypes.DEFAULT_TYPE, phase: str) -> None:
@@ -767,8 +881,9 @@ async def advance(query, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def finish_topic(query, context: ContextTypes.DEFAULT_TYPE) -> None:
     ud = context.user_data
     topic_id = ud["topic"]
-    completed = get_completed(ud)
-    completed.add(topic_id)
+    user_id = query.from_user.id
+    await mark_completed(context, user_id, topic_id)
+    completed = await get_completed(context, user_id)
 
     if len(completed) >= len(TOPIC_ORDER):
         await query.edit_message_text(
@@ -799,6 +914,7 @@ async def enter_topic(query, context: ContextTypes.DEFAULT_TYPE, topic_id: str) 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     context.user_data.clear()
+    await touch_user(update.effective_user.id)
     await update.message.reply_text(
         "*Артикли на автомате*\n\n"
         "_150 бытовых слов + тренировка Nominativ, Akkusativ и Dativ_\n\n"
@@ -812,6 +928,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def reset_progress(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     context.user_data["completed"] = set()
+    await db_reset_progress(update.effective_user.id)
     await update.message.reply_text("Прогресс сброшен ✅", reply_markup=kb_main_menu(set()))
 
 
@@ -823,7 +940,6 @@ async def go_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     await query.answer()
     target = query.data.split(":", 1)[1]
-    ud = context.user_data
 
     if target == "howto":
         await query.edit_message_text(
@@ -837,7 +953,7 @@ async def go_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             parse_mode="Markdown",
         )
     elif target == "menu":
-        completed = get_completed(ud)
+        completed = await get_completed(context, update.effective_user.id)
         await query.edit_message_text("Главное меню:", reply_markup=kb_main_menu(completed))
     elif target == "cheat":
         await query.edit_message_text(CHEAT_SHEET_TEXT, reply_markup=kb_cheat_back(), parse_mode="Markdown")
@@ -857,7 +973,7 @@ async def render_current_screen(query, context: ContextTypes.DEFAULT_TYPE) -> No
             text, reply_markup=kb_intro(f"phase_go:{ud['phase']}", label), parse_mode="Markdown"
         )
     else:
-        completed = get_completed(ud)
+        completed = await get_completed(context, query.from_user.id)
         await query.edit_message_text("Главное меню:", reply_markup=kb_main_menu(completed))
 
 
@@ -915,7 +1031,7 @@ def main() -> None:
     if not token:
         raise RuntimeError("Environment variable TELEGRAM_BOT_TOKEN is not set.")
 
-    app = Application.builder().token(token).build()
+    app = Application.builder().token(token).post_init(init_db).post_shutdown(close_db).build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("reset", reset_progress))
