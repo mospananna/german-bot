@@ -80,16 +80,16 @@ TOPIC_ORDER = [
 ]
 
 TOPIC_META = {
-    "haus": ("🏠", "Дом и квартира"),
-    "kueche": ("🍴", "Кухня и еда"),
-    "bad": ("🚿", "Ванная и уход"),
-    "kleidung": ("👕", "Одежда и обувь"),
-    "stadt": ("🚇", "Город и транспорт"),
-    "buero": ("💻", "Работа и офис"),
-    "gesundheit": ("🩹", "Здоровье и врач"),
-    "einkaufen": ("🛒", "Покупки и деньги"),
-    "reisen": ("🧳", "Путешествия и свободное время"),
-    "menschen": ("💬", "Люди и общение"),
+    "haus": ("🏠", "Haus und Wohnung"),
+    "kueche": ("🍴", "Küche und Essen"),
+    "bad": ("🚿", "Bad und Pflege"),
+    "kleidung": ("👕", "Kleidung und Schuhe"),
+    "stadt": ("🚇", "Stadt und Verkehr"),
+    "buero": ("💻", "Arbeit und Büro"),
+    "gesundheit": ("🩹", "Gesundheit und Arzt"),
+    "einkaufen": ("🛒", "Einkaufen und Geld"),
+    "reisen": ("🧳", "Reisen und Freizeit"),
+    "menschen": ("💬", "Menschen und Kontakt"),
 }
 
 # ─────────────────────────────────────────────────────────
@@ -605,11 +605,9 @@ def build_p1_items(topic_id: str) -> List[dict]:
 def build_p2_items(topic_id: str) -> List[dict]:
     words = WORDS[topic_id]
     cases = ["Nominativ", "Akkusativ", "Dativ"]
-    pick_indices = [0, 3, 6, 9, 12, 7]
     items = []
-    for i, idx in enumerate(pick_indices):
-        w = words[idx % len(words)]
-        case = cases[i % 3]
+    for i, w in enumerate(words):
+        case = cases[i % 3]  # even 5/5/5 split across 15 words
         gender = GENDER[w.artikel]
         def_form = DEFINITE[gender][case]
         answer = INDEFINITE[gender][case]
