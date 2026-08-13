@@ -559,19 +559,27 @@ def kb_main_menu(completed: set) -> InlineKeyboardMarkup:
 
 
 def kb_cheat_back() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Назад к заданию", callback_data="go:menu")]])
+    return InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Назад к заданию", callback_data="backcheat")]])
 
 
 def kb_intro(callback: str, label: str = "Начать") -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup([[InlineKeyboardButton(label, callback_data=callback)]])
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton(label, callback_data=callback)],
+        [InlineKeyboardButton("🔠 Таблица артиклей", callback_data="cheatmid")],
+    ])
 
 
 def kb_options(options: List[str]) -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup([[InlineKeyboardButton(o, callback_data=f"answer:{o}")] for o in options])
+    rows = [[InlineKeyboardButton(o, callback_data=f"answer:{o}")] for o in options]
+    rows.append([InlineKeyboardButton("🔠 Таблица артиклей", callback_data="cheatmid")])
+    return InlineKeyboardMarkup(rows)
 
 
 def kb_continue() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup([[InlineKeyboardButton("Дальше ▶️", callback_data="continue")]])
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("Дальше ▶️", callback_data="continue")],
+        [InlineKeyboardButton("🔠 Таблица артиклей", callback_data="cheatmid")],
+    ])
 
 
 def kb_after_topic(finished_all: bool) -> InlineKeyboardMarkup:
@@ -848,6 +856,36 @@ async def go_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await query.edit_message_text(CHEAT_SHEET_TEXT, reply_markup=kb_cheat_back(), parse_mode="Markdown")
 
 
+async def render_current_screen(query, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Redraws whatever screen the user was on before opening the cheat sheet,
+    without resetting quiz progress (idx/items/phase stay untouched)."""
+    ud = context.user_data
+    items = ud.get("items")
+    idx = ud.get("idx")
+    if items is not None and idx is not None and idx < len(items):
+        await send_question(query, context)
+    elif ud.get("phase") is not None and ud.get("topic") is not None:
+        text, label = PHASE_INTRO[ud["phase"]]
+        await query.edit_message_text(
+            text, reply_markup=kb_intro(f"phase_go:{ud['phase']}", label), parse_mode="Markdown"
+        )
+    else:
+        completed = get_completed(ud)
+        await query.edit_message_text("Главное меню:", reply_markup=kb_main_menu(completed))
+
+
+async def cheatmid_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    await query.answer()
+    await query.edit_message_text(CHEAT_SHEET_TEXT, reply_markup=kb_cheat_back(), parse_mode="Markdown")
+
+
+async def backcheat_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    await query.answer()
+    await render_current_screen(query, context)
+
+
 async def topic_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     await query.answer()
@@ -911,6 +949,8 @@ def main() -> None:
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("reset", reset_progress))
     app.add_handler(CallbackQueryHandler(go_router, pattern=r"^go:"))
+    app.add_handler(CallbackQueryHandler(cheatmid_router, pattern=r"^cheatmid$"))
+    app.add_handler(CallbackQueryHandler(backcheat_router, pattern=r"^backcheat$"))
     app.add_handler(CallbackQueryHandler(topic_router, pattern=r"^topic:"))
     app.add_handler(CallbackQueryHandler(phase_go_router, pattern=r"^phase_go:"))
     app.add_handler(CallbackQueryHandler(answer_router, pattern=r"^answer:"))
