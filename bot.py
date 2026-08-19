@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import random
@@ -554,14 +555,39 @@ def kb_howto() -> InlineKeyboardMarkup:
     ])
 
 
-def kb_main_menu(completed: set) -> InlineKeyboardMarkup:
+def kb_main_menu(completed: set, show_hardwords: bool = False) -> InlineKeyboardMarkup:
     rows = []
     for tid in TOPIC_ORDER:
         emoji, title = TOPIC_META[tid]
         mark = " ✅" if tid in completed else ""
         rows.append([InlineKeyboardButton(f"{emoji} {title}{mark}", callback_data=f"topic:{tid}")])
+    rows.append([InlineKeyboardButton(FAKE_DOOR_MENU_LABEL["nohint"], callback_data="fakedoor:nohint")])
+    rows.append([InlineKeyboardButton(FAKE_DOOR_MENU_LABEL["plural"], callback_data="fakedoor:plural")])
+    if show_hardwords:
+        rows.append([InlineKeyboardButton(FAKE_DOOR_MENU_LABEL["hardwords"], callback_data="fakedoor:hardwords")])
     rows.append([InlineKeyboardButton("🔠 Таблица артиклей", callback_data="go:cheat")])
     return InlineKeyboardMarkup(rows)
+
+
+def kb_offer3() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("Мне интересно", callback_data="offer3:interested")],
+        [InlineKeyboardButton("Продолжить бесплатную версию", callback_data="offer3:continue")],
+    ])
+
+
+def kb_offer10() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("Хочу полную версию", callback_data="offer10:want")],
+        [InlineKeyboardButton("Вернуться в бесплатный бот", callback_data="offer10:back")],
+    ])
+
+
+def kb_fakedoor(kind: str) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton(FAKE_DOOR_BUTTON_LABEL[kind], callback_data=f"fakedoor_click:{kind}")],
+        [InlineKeyboardButton("🔙 В меню", callback_data="go:menu")],
+    ])
 
 
 def kb_cheat_back() -> InlineKeyboardMarkup:
@@ -703,6 +729,81 @@ CHEAT_SHEET_TEXT = (
 
 
 # ─────────────────────────────────────────────────────────
+# PRO OFFERS & FAKE DOORS (demand validation, no real payment)
+# ─────────────────────────────────────────────────────────
+
+ADMIN_USER_ID = 87350308
+PRICE = "€7.90 / месяц"
+
+OFFER3_TEXT = (
+    "*Похоже, формат вам подходит :)*\n\n"
+    "Я планирую полную версию «Артикли на автомате».\n\n"
+    "В ней будут:\n"
+    "— вся лексика A1–B1\n"
+    "— множественное число в предложениях\n"
+    "— задания без подсказки падежа\n"
+    "— предлоги и глаголы с управлением\n"
+    "— интервальные повторения\n"
+    "— тренировки по тем словам и формам, где чаще возникают ошибки\n\n"
+    "Планируемая подписка:\n"
+    f"*{PRICE}*"
+)
+
+OFFER3_THANKS_TEXT = (
+    "Спасибо! Полная версия пока готовится. "
+    "Интерес отмечен — сообщу, когда можно будет попробовать."
+)
+
+OFFER10_TEXT = (
+    "*Все 150 слов пройдены!*\n\n"
+    "Если хочется продолжить, в полной версии будет вся лексика A1–B1, Plural, "
+    "более сложные предложения, падежи без подсказок, предлоги и управление, "
+    "интервальные повторения и персональные тренировки.\n\n"
+    f"*{PRICE}*"
+)
+
+FAKE_DOOR_TEXT = {
+    "nohint": (
+        "*Без подсказки падежа* 🔒\n\n"
+        "Здесь падеж не подсказан — его нужно определить по предлогу и смыслу самому:\n\n"
+        "_Wir sprechen morgen mit ▢▢▢ neuen Kollegen über das Projekt._\n\n"
+        "В полной версии будут задания, где падеж нужно определять по самому предложению."
+    ),
+    "plural": (
+        "*Plural in Sätzen* 🔒\n\n"
+        "Множественное число — прямо в предложениях, вместе с падежами и другими словами:\n\n"
+        "_Im Büro stehen mehrere neue ▢▢▢._\n\n"
+        "В полной версии множественное число будет тренироваться прямо в предложениях — "
+        "вместе с артиклями, падежами и другими словами из списка."
+    ),
+    "hardwords": (
+        "*Мои сложные слова* 🔒\n\n"
+        "В полной версии бот будет запоминать слова и формы, в которых чаще возникают ошибки, "
+        "и собирать отдельные тренировки именно по ним."
+    ),
+}
+
+FAKE_DOOR_BUTTON_LABEL = {
+    "nohint": "Хочу такой режим",
+    "plural": "Хочу Plural",
+    "hardwords": "Хочу такую тренировку",
+}
+
+FAKE_DOOR_MENU_LABEL = {
+    "nohint": "🔒 Без подсказки падежа",
+    "plural": "🔒 Plural in Sätzen",
+    "hardwords": "🔒 Мои сложные слова",
+}
+
+FAKE_DOOR_THANKS_TEXT = "Записала! Дам знать, когда режим будет готов."
+
+# Round-robin schedule: topic-completion-count → which fake door to show.
+# Spread across 4–9 (never on 3 or 10, those are the real offers), so a user who
+# finishes all 10 topics sees all three fake doors by the end, one per checkpoint.
+FAKE_DOOR_SCHEDULE = {4: "nohint", 6: "plural", 8: "hardwords"}
+
+
+# ─────────────────────────────────────────────────────────
 # DATABASE (persistent progress — Postgres via DATABASE_URL)
 #
 # Optional by design: if DATABASE_URL isn't set or the connection fails,
@@ -731,6 +832,18 @@ CREATE TABLE IF NOT EXISTS progress (
 );
 """
 
+ADD_SOURCE_COLUMN_SQL = "ALTER TABLE users ADD COLUMN IF NOT EXISTS source TEXT;"
+
+EVENTS_TABLE_SQL = """
+CREATE TABLE IF NOT EXISTS events (
+    id SERIAL PRIMARY KEY,
+    telegram_user_id BIGINT NOT NULL,
+    event_type TEXT NOT NULL,
+    payload JSONB,
+    occurred_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+"""
+
 
 async def init_db(app: Application) -> None:
     global DB_POOL
@@ -746,6 +859,8 @@ async def init_db(app: Application) -> None:
         async with DB_POOL.acquire() as conn:
             await conn.execute(USERS_TABLE_SQL)
             await conn.execute(PROGRESS_TABLE_SQL)
+            await conn.execute(ADD_SOURCE_COLUMN_SQL)
+            await conn.execute(EVENTS_TABLE_SQL)
         logger.info("Database connected, schema ensured — progress is now persistent.")
     except Exception as e:
         logger.error(f"Database connection failed, falling back to in-memory progress: {e}")
@@ -757,12 +872,39 @@ async def close_db(app: Application) -> None:
         await DB_POOL.close()
 
 
-async def touch_user(user_id: int) -> None:
+async def touch_user(user_id: int, source: Optional[str] = None) -> None:
+    if DB_POOL is None:
+        return
+    if source:
+        # source is only ever written on first insert — ON CONFLICT branch below
+        # never touches it, so a user's original source is preserved forever.
+        await DB_POOL.execute(
+            "INSERT INTO users (telegram_user_id, source) VALUES ($1, $2) "
+            "ON CONFLICT (telegram_user_id) DO UPDATE SET last_seen_at = now()",
+            user_id, source,
+        )
+    else:
+        await DB_POOL.execute(
+            "INSERT INTO users (telegram_user_id) VALUES ($1) "
+            "ON CONFLICT (telegram_user_id) DO UPDATE SET last_seen_at = now()",
+            user_id,
+        )
+
+
+async def log_event(user_id: int, event_type: str, payload: Optional[dict] = None) -> None:
     if DB_POOL is None:
         return
     await DB_POOL.execute(
-        "INSERT INTO users (telegram_user_id) VALUES ($1) "
-        "ON CONFLICT (telegram_user_id) DO UPDATE SET last_seen_at = now()",
+        "INSERT INTO events (telegram_user_id, event_type, payload) VALUES ($1, $2, $3::jsonb)",
+        user_id, event_type, json.dumps(payload) if payload is not None else None,
+    )
+
+
+async def has_errors(user_id: int) -> bool:
+    if DB_POOL is None:
+        return False
+    return await DB_POOL.fetchval(
+        "SELECT EXISTS(SELECT 1 FROM events WHERE telegram_user_id = $1 AND event_type = 'answer_incorrect')",
         user_id,
     )
 
@@ -810,6 +952,12 @@ async def get_completed(context: ContextTypes.DEFAULT_TYPE, user_id: int) -> set
     return ud["completed"]
 
 
+async def build_main_menu(context: ContextTypes.DEFAULT_TYPE, user_id: int) -> InlineKeyboardMarkup:
+    completed = await get_completed(context, user_id)
+    show_hardwords = await has_errors(user_id)
+    return kb_main_menu(completed, show_hardwords)
+
+
 async def mark_completed(context: ContextTypes.DEFAULT_TYPE, user_id: int, topic_id: str) -> None:
     if DB_POOL is not None:
         await db_mark_completed(user_id, topic_id)
@@ -855,6 +1003,11 @@ async def handle_answer(query, context: ContextTypes.DEFAULT_TYPE, chosen: str) 
     ud = context.user_data
     item = ud["items"][ud["idx"]]
     correct = chosen == item["answer"]
+    if not correct:
+        await log_event(
+            query.from_user.id, "answer_incorrect",
+            {"topic": ud.get("topic"), "phase": ud.get("phase")},
+        )
     icon = "✅" if correct else f"❌  (правильно: *{item['answer']}*)"
     if ud["phase"] == "p1" and "translation" in item:
         text = f"Твой ответ: *{chosen}* {icon}\n\n_{item['full']} — {item['translation']}_"
@@ -884,27 +1037,60 @@ async def finish_topic(query, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_id = query.from_user.id
     await mark_completed(context, user_id, topic_id)
     completed = await get_completed(context, user_id)
+    count = len(completed)
+    # The topic is definitively over — clear the quiz session so "Назад к заданию"
+    # from the cheat sheet (or anything else that resumes a session) can never
+    # resurrect this finished topic later. Leaving this is what caused the bug
+    # where reopening the cheat sheet days later dropped people back into an
+    # already-completed topic's last section.
+    ud["items"] = None
+    ud["idx"] = None
+    ud["phase"] = None
+    ud["topic"] = None
+    await log_event(user_id, "topic_complete", {"topic_id": topic_id, "total_completed": count})
 
-    if len(completed) >= len(TOPIC_ORDER):
-        await query.edit_message_text(
+    if count >= len(TOPIC_ORDER):
+        await log_event(user_id, "offer10_shown")
+        text = (
             "*Все 150 слов пройдены!*\n\n"
             "10 бытовых тем, определённый и неопределённый артикль, "
             "Nominativ, Akkusativ и Dativ — готово.\n\n"
-            f"{random.choice(FINAL_VARIANTS)}",
-            reply_markup=kb_main_menu(completed),
-            parse_mode="Markdown",
+            f"{random.choice(FINAL_VARIANTS)}\n\n"
+            "Если хочется продолжить, в полной версии будет вся лексика A1–B1, Plural, "
+            "более сложные предложения, падежи без подсказок, предлоги и управление, "
+            "интервальные повторения и персональные тренировки.\n\n"
+            f"*{PRICE}*"
         )
+        await query.edit_message_text(text, reply_markup=kb_offer10(), parse_mode="Markdown")
+        return
+
+    if count == 3:
+        await log_event(user_id, "offer3_shown")
+        await query.edit_message_text(OFFER3_TEXT, reply_markup=kb_offer3(), parse_mode="Markdown")
+        return
+
+    # Round-robin: three fixed checkpoints spread across topics 4–9, one door each,
+    # so a user who completes all 10 topics sees all three by the end (not all at once).
+    # "hardwords" only fires for users who've actually made a mistake by then — if not,
+    # we just skip that checkpoint rather than showing an irrelevant offer.
+    door = FAKE_DOOR_SCHEDULE.get(count)
+    if door and (door != "hardwords" or await has_errors(user_id)):
+        await log_event(user_id, "fakedoor_shown", {"kind": door, "auto": True})
+        await query.edit_message_text(FAKE_DOOR_TEXT[door], reply_markup=kb_fakedoor(door), parse_mode="Markdown")
         return
 
     praise = random.choice(PRAISE_VARIANTS)
     await query.edit_message_text(
-        f"{praise}\n\nВыбери следующую тему:", reply_markup=kb_main_menu(completed), parse_mode="Markdown"
+        f"{praise}\n\nВыбери следующую тему:",
+        reply_markup=await build_main_menu(context, user_id),
+        parse_mode="Markdown",
     )
 
 
 async def enter_topic(query, context: ContextTypes.DEFAULT_TYPE, topic_id: str) -> None:
     ud = context.user_data
     ud["topic"] = topic_id
+    await log_event(query.from_user.id, "topic_start", {"topic_id": topic_id})
     await show_phase_intro(query, context, "p1")
 
 
@@ -914,7 +1100,10 @@ async def enter_topic(query, context: ContextTypes.DEFAULT_TYPE, topic_id: str) 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     context.user_data.clear()
-    await touch_user(update.effective_user.id)
+    user_id = update.effective_user.id
+    source = context.args[0] if context.args else None
+    await touch_user(user_id, source)
+    await log_event(user_id, "start", {"source": source} if source else None)
     await update.message.reply_text(
         "*Артикли на автомате*\n\n"
         "_150 бытовых слов + тренировка Nominativ, Akkusativ и Dativ_\n\n"
@@ -930,6 +1119,79 @@ async def reset_progress(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     context.user_data["completed"] = set()
     await db_reset_progress(update.effective_user.id)
     await update.message.reply_text("Прогресс сброшен ✅", reply_markup=kb_main_menu(set()))
+
+
+async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if update.effective_user.id != ADMIN_USER_ID:
+        return
+    if DB_POOL is None:
+        await update.message.reply_text("БД не подключена — статистика недоступна.")
+        return
+
+    def pct(n: int, total: int) -> str:
+        return f"{n} ({round(n / total * 100)}%)" if total else f"{n}"
+
+    total_users = await DB_POOL.fetchval("SELECT COUNT(*) FROM users") or 0
+    by_source = await DB_POOL.fetch(
+        "SELECT COALESCE(source, '(без источника)') AS src, COUNT(*) AS n "
+        "FROM users GROUP BY src ORDER BY n DESC"
+    )
+    started_topic = await DB_POOL.fetchval(
+        "SELECT COUNT(DISTINCT telegram_user_id) FROM events WHERE event_type = 'topic_start'"
+    ) or 0
+
+    per_user_counts = await DB_POOL.fetch(
+        "SELECT telegram_user_id, COUNT(*) AS n FROM progress GROUP BY telegram_user_id"
+    )
+    completed_1 = sum(1 for r in per_user_counts if r["n"] >= 1)
+    completed_3 = sum(1 for r in per_user_counts if r["n"] >= 3)
+    completed_10 = sum(1 for r in per_user_counts if r["n"] >= 10)
+
+    async def distinct_users(event_type: str, extra_where: str = "") -> int:
+        query = f"SELECT COUNT(DISTINCT telegram_user_id) FROM events WHERE event_type = $1 {extra_where}"
+        return await DB_POOL.fetchval(query, event_type) or 0
+
+    offer3_shown = await distinct_users("offer3_shown")
+    offer3_click = await distinct_users("offer3_click_interested")
+    offer10_shown = await distinct_users("offer10_shown")
+    offer10_click = await distinct_users("offer10_click_want")
+    fd_nohint = await DB_POOL.fetchval(
+        "SELECT COUNT(DISTINCT telegram_user_id) FROM events "
+        "WHERE event_type = 'fakedoor_click' AND payload->>'kind' = 'nohint'"
+    ) or 0
+    fd_plural = await DB_POOL.fetchval(
+        "SELECT COUNT(DISTINCT telegram_user_id) FROM events "
+        "WHERE event_type = 'fakedoor_click' AND payload->>'kind' = 'plural'"
+    ) or 0
+    fd_hardwords = await DB_POOL.fetchval(
+        "SELECT COUNT(DISTINCT telegram_user_id) FROM events "
+        "WHERE event_type = 'fakedoor_click' AND payload->>'kind' = 'hardwords'"
+    ) or 0
+
+    lines = [
+        "*Статистика*", "",
+        f"Всего пользователей: {total_users}", "",
+        "*По источникам:*",
+    ]
+    for r in by_source:
+        lines.append(f"— {r['src']}: {r['n']}")
+    lines += [
+        "",
+        f"Начали хотя бы 1 тему: {pct(started_topic, total_users)}",
+        f"Завершили ≥1 тему: {pct(completed_1, total_users)}",
+        f"Завершили ≥3 темы: {pct(completed_3, total_users)}",
+        f"Завершили все 10 тем: {pct(completed_10, total_users)}",
+        "",
+        f"Оффер после 3-й темы показан: {pct(offer3_shown, total_users)}",
+        f"— «Мне интересно»: {pct(offer3_click, offer3_shown)}",
+        f"Финальный оффер показан: {pct(offer10_shown, total_users)}",
+        f"— «Хочу полную версию»: {pct(offer10_click, offer10_shown)}",
+        "",
+        f"Клик «без подсказки падежа»: {pct(fd_nohint, total_users)}",
+        f"Клик «Plural»: {pct(fd_plural, total_users)}",
+        f"Клик «сложные слова»: {pct(fd_hardwords, total_users)}",
+    ]
+    await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
 
 
 # ─────────────────────────────────────────────────────────
@@ -953,8 +1215,9 @@ async def go_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             parse_mode="Markdown",
         )
     elif target == "menu":
-        completed = await get_completed(context, update.effective_user.id)
-        await query.edit_message_text("Главное меню:", reply_markup=kb_main_menu(completed))
+        await query.edit_message_text(
+            "Главное меню:", reply_markup=await build_main_menu(context, update.effective_user.id)
+        )
     elif target == "cheat":
         await query.edit_message_text(CHEAT_SHEET_TEXT, reply_markup=kb_cheat_back(), parse_mode="Markdown")
 
@@ -973,8 +1236,9 @@ async def render_current_screen(query, context: ContextTypes.DEFAULT_TYPE) -> No
             text, reply_markup=kb_intro(f"phase_go:{ud['phase']}", label), parse_mode="Markdown"
         )
     else:
-        completed = await get_completed(context, query.from_user.id)
-        await query.edit_message_text("Главное меню:", reply_markup=kb_main_menu(completed))
+        await query.edit_message_text(
+            "Главное меню:", reply_markup=await build_main_menu(context, query.from_user.id)
+        )
 
 
 async def cheatmid_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -987,6 +1251,61 @@ async def backcheat_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     query = update.callback_query
     await query.answer()
     await render_current_screen(query, context)
+
+
+async def offer3_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    await query.answer()
+    action = query.data.split(":", 1)[1]
+    user_id = query.from_user.id
+    if action == "interested":
+        await log_event(user_id, "offer3_click_interested")
+        await query.edit_message_text(
+            OFFER3_THANKS_TEXT, reply_markup=await build_main_menu(context, user_id)
+        )
+    else:
+        await log_event(user_id, "offer3_click_continue")
+        await query.edit_message_text(
+            "Главное меню:", reply_markup=await build_main_menu(context, user_id)
+        )
+
+
+async def offer10_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    await query.answer()
+    action = query.data.split(":", 1)[1]
+    user_id = query.from_user.id
+    if action == "want":
+        await log_event(user_id, "offer10_click_want")
+        await query.edit_message_text(
+            OFFER3_THANKS_TEXT, reply_markup=await build_main_menu(context, user_id)
+        )
+    else:
+        await log_event(user_id, "offer10_click_back")
+        await query.edit_message_text(
+            "Главное меню:", reply_markup=await build_main_menu(context, user_id)
+        )
+
+
+async def fakedoor_menu_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Persistent 🔒 menu entry points — same screens as the automatic mid-course show."""
+    query = update.callback_query
+    await query.answer()
+    kind = query.data.split(":", 1)[1]
+    user_id = query.from_user.id
+    await log_event(user_id, "fakedoor_shown", {"kind": kind, "auto": False})
+    await query.edit_message_text(FAKE_DOOR_TEXT[kind], reply_markup=kb_fakedoor(kind), parse_mode="Markdown")
+
+
+async def fakedoor_click_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    await query.answer()
+    kind = query.data.split(":", 1)[1]
+    user_id = query.from_user.id
+    await log_event(user_id, "fakedoor_click", {"kind": kind})
+    await query.edit_message_text(
+        FAKE_DOOR_THANKS_TEXT, reply_markup=await build_main_menu(context, user_id)
+    )
 
 
 async def topic_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -1026,18 +1345,38 @@ async def action_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 # MAIN
 # ─────────────────────────────────────────────────────────
 
+async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Global safety net: turns 'bot silently does nothing' into a visible,
+    actionable message. Most likely trigger is a stale inline keyboard from
+    before a restart, pointing at quiz state that no longer exists."""
+    logger.error("Unhandled exception while processing an update", exc_info=context.error)
+    try:
+        if isinstance(update, Update) and update.callback_query:
+            await update.callback_query.answer(
+                "Что-то пошло не так — напиши /start заново", show_alert=True
+            )
+    except Exception:
+        pass
+
+
 def main() -> None:
     token = os.getenv("TELEGRAM_BOT_TOKEN")
     if not token:
         raise RuntimeError("Environment variable TELEGRAM_BOT_TOKEN is not set.")
 
     app = Application.builder().token(token).post_init(init_db).post_shutdown(close_db).build()
+    app.add_error_handler(error_handler)
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("reset", reset_progress))
+    app.add_handler(CommandHandler("stats", stats))
     app.add_handler(CallbackQueryHandler(go_router, pattern=r"^go:"))
     app.add_handler(CallbackQueryHandler(cheatmid_router, pattern=r"^cheatmid$"))
     app.add_handler(CallbackQueryHandler(backcheat_router, pattern=r"^backcheat$"))
+    app.add_handler(CallbackQueryHandler(offer3_router, pattern=r"^offer3:"))
+    app.add_handler(CallbackQueryHandler(offer10_router, pattern=r"^offer10:"))
+    app.add_handler(CallbackQueryHandler(fakedoor_menu_router, pattern=r"^fakedoor:"))
+    app.add_handler(CallbackQueryHandler(fakedoor_click_router, pattern=r"^fakedoor_click:"))
     app.add_handler(CallbackQueryHandler(topic_router, pattern=r"^topic:"))
     app.add_handler(CallbackQueryHandler(phase_go_router, pattern=r"^phase_go:"))
     app.add_handler(CallbackQueryHandler(answer_router, pattern=r"^answer:"))
